@@ -1,0 +1,217 @@
+ 
+#define BLYNK_PRINT Serial
+
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+
+#include <Adafruit_NeoPixel.h>
+
+BlynkTimer timer;
+BlynkTimer Twinkle;
+
+
+// You should get Auth Token in the Blynk App.
+// Go to the Project Settings (nut icon).
+char auth[] = "BiwUlJDd3J9YtlbF9tjrMCKX010v2Lmm";
+
+// Your WiFi credentials.
+// Set password to "" for open networks.
+char ssid[] = "Dialog 4G 740";
+char pass[] = "5bF9c9d1";
+#define PIN   15
+#define NUMPIXELS   141
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+unsigned long lastEvent = 0;
+int ColorNum1 ;
+int delayval ;
+int check = 0;
+int r ;
+int g ;
+int b ;
+int randomC = 0;
+
+BLYNK_WRITE(V2) //change source
+  {
+  Serial.println("zebra");
+  r = param[0].asInt();
+  g = param[1].asInt();
+  b = param[2].asInt();
+  Serial.println(r);
+  Serial.println(g);
+  Serial.println(b);
+  pixels.fill(pixels.Color(r,g,b),0,NUMPIXELS);
+  pixels.show();
+  }
+BLYNK_WRITE(V3) //change source
+  {
+    int brightness=param.asInt();
+    pixels.setBrightness(brightness);
+    pixels.show();
+  }
+
+BLYNK_WRITE(V1){
+  int pinData = param.asInt();
+  if (pinData == 1){
+    check = 1;
+  }
+  else{
+    check = 0;
+  }
+   
+}
+BLYNK_WRITE(V4){
+  delayval = param.asInt();
+   
+}
+
+BLYNK_WRITE(V5){
+  int pinData = param.asInt();
+  if (pinData == 1){
+    check = 2;
+  }
+  else{
+    check = 0;
+  }
+}
+
+BLYNK_WRITE(V6){
+  int pinData = param.asInt();
+  if (pinData == 1){
+    check = 3;
+  }
+  else{
+    check = 0;
+  }
+  }
+
+BLYNK_WRITE(V8){
+ int pinData = param.asInt();
+  if (pinData == 1){
+    check = 4;
+  }
+  else { check = 0;}
+  }
+
+void lightning(){
+
+  int numberOfFlashes=random(1, 10);
+  // random number between 0 and 10;  // random number between 0 and 100 
+  for(int j = 0; j < numberOfFlashes; j++) {
+    int pixel[] = {random(144), random(144), random(144), random(144)};
+    pixels.setPixelColor(pixel[0], 255, 255, 255);
+    pixels.setPixelColor(pixel[1], r, g, b);
+    pixels.setPixelColor(pixel[2], r, g, b);
+    pixels.setPixelColor(pixel[3], 255,255, 255);
+    pixels.show();
+    delay(random(100, 250));
+    pixels.clear();
+    pixels.show();
+    delay(delayval);
+  }
+ 
+ delay(random(1000,5000));
+}
+
+void rainbowCycle() {
+  byte *c;
+  uint16_t i, j;
+
+  for(j=0; j<256; j++) { //cycles of all colors on wheel
+    for(i=0; i< NUMPIXELS; i++) {
+      c=Wheel(((i * 256 / NUMPIXELS) + j) & 255);
+      pixels.setPixelColor(i, *c, *(c+1), *(c+2));
+    }
+    pixels.show();
+    delay(delayval);
+  }
+}
+
+
+byte * Wheel(byte WheelPos) {
+  static byte c[3];
+ 
+  if(WheelPos < 85) {
+   c[0]=WheelPos * 3;
+   c[1]=255 - WheelPos * 3;
+   c[2]=0;
+  } else if(WheelPos < 170) {
+   WheelPos -= 85;
+   c[0]=255 - WheelPos * 3;
+   c[1]=0;
+   c[2]=WheelPos * 3;
+  } else {
+   WheelPos -= 170;
+   c[0]=0;
+   c[1]=WheelPos * 3;
+   c[2]=255 - WheelPos * 3;
+  }
+
+  return c;
+}
+
+void Fade(){
+  for(int k = 0; k < 256; k=k+1) {
+    int R = (k/256.0)*r;
+    int G = (k/256.0)*g;
+    int B = (k/256.0)*b;
+    pixels.fill(pixels.Color(R,G,B), 0,NUMPIXELS);
+    pixels.show();
+  }
+  delay(delayval);   
+  for(int k = 255; k >= 0; k=k-2) {
+    int R = (k/256.0)*r;
+    int G = (k/256.0)*g;
+    int B = (k/256.0)*b;
+    pixels.fill(pixels.Color(R,G,B), 0,NUMPIXELS);
+    pixels.show();
+  }
+}
+
+
+void colorWipe() {
+
+  for(uint16_t i=0; i<NUMPIXELS; i++) {
+      pixels.setPixelColor(i, r, g, b);
+      pixels.show();
+      delay(delayval);}
+  pixels.clear();
+  pixels.show();
+  delay(delayval);
+  
+}
+
+void setup()
+{
+  // Debug console
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  pixels.begin();
+  pixels.setBrightness(20);
+  pixels.fill(pixels.Color(255,255,255),0,NUMPIXELS);
+  pixels.show();
+}
+
+void loop()
+{
+  Blynk.run();
+  switch (check){
+    //case 0:
+    //pixels.fill(pixels.Color(0,0,0),0,NUMPIXELS);
+    //pixels.show();
+    case 1:
+    rainbowCycle();
+    break;
+    case 2:
+    lightning();
+    break;
+    case 3:
+    Fade();
+    break;
+    case 4:
+    colorWipe();
+    break;
+  }
+  
+}
